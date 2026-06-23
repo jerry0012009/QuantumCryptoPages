@@ -1,6 +1,9 @@
 (function () {
   var MOBILE_QUERY = "(max-width: 768px)";
   var mq = window.matchMedia(MOBILE_QUERY);
+  if (mq.matches) {
+    document.documentElement.classList.add("qc-mobile-boot");
+  }
 
   function isZh() {
     return (document.documentElement.lang || "").toLowerCase().indexOf("zh") === 0;
@@ -10,7 +13,21 @@
     var selector = section ? "#" + section + " img" : "img";
     var images = Array.prototype.slice.call(document.querySelectorAll(selector));
     var img = images[fallbackIndex || 0] || images[0] || document.querySelector("#main img");
-    return img ? (img.currentSrc || img.src || "") : "";
+    if (!img) return "";
+    var srcset = img.getAttribute("srcset") || "";
+    var matches = srcset.match(/(?:https?:\/\/|\.{0,2}\/)[^\s]+?\s+\d+w/g) || [];
+    var best = matches.map(function (candidate) {
+      var parts = candidate.trim().split(/\s+/);
+      return {
+        url: parts[0],
+        width: parts[1] ? parseInt(parts[1], 10) : 0
+      };
+    }).filter(function (candidate) {
+      return candidate.url;
+    }).sort(function (a, b) {
+      return b.width - a.width;
+    })[0];
+    return best ? new URL(best.url, document.baseURI).href : (img.src || img.currentSrc || "");
   }
 
   function el(tag, className, text) {
@@ -54,6 +71,44 @@
       list.appendChild(el("li", "", item));
     });
     return list;
+  }
+
+  function header(copy) {
+    var siteHeader = el("header", "qc-mobile-header");
+    siteHeader.appendChild(link("qc-mobile-brand", "Quantum Crypto", "/quantumcrypto/"));
+
+    var menuButton = el("button", "qc-menu-button");
+    menuButton.type = "button";
+    menuButton.setAttribute("aria-label", "Open menu");
+    menuButton.setAttribute("aria-expanded", "false");
+    menuButton.appendChild(el("span", ""));
+    menuButton.appendChild(el("span", ""));
+    menuButton.appendChild(el("span", ""));
+    siteHeader.appendChild(menuButton);
+
+    var nav = el("nav", "qc-mobile-menu");
+    [
+      ["Key Facts", "#qc-mobile-keyfacts"],
+      ["What We Do", "#qc-mobile-what"],
+      ["Mainline", "#qc-mobile-mainline"],
+      [copy.reports, "#qc-mobile-reports"],
+      [copy.contact, "#qc-mobile-contact"],
+      [copy.portal, "#qc-mobile-contact"]
+    ].forEach(function (item) {
+      nav.appendChild(link("", item[0], item[1]));
+    });
+    siteHeader.appendChild(nav);
+
+    menuButton.addEventListener("click", function () {
+      var isOpen = siteHeader.classList.toggle("qc-menu-open");
+      menuButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+    nav.addEventListener("click", function () {
+      siteHeader.classList.remove("qc-menu-open");
+      menuButton.setAttribute("aria-expanded", "false");
+    });
+
+    return siteHeader;
   }
 
   function buildContent() {
@@ -151,7 +206,9 @@
     };
 
     var shell = el("div", "qc-mobile-shell");
+    shell.setAttribute("data-qc-mobile-shell", "true");
     shell.setAttribute("aria-label", "Quantum Crypto mobile content");
+    shell.appendChild(header(copy));
 
     var hero = el("section", "qc-mobile-hero");
     if (heroImage) hero.style.setProperty("--qc-hero-image", "url('" + heroImage.replace(/'/g, "\\'") + "')");
@@ -162,6 +219,7 @@
     shell.appendChild(hero);
 
     var facts = el("section", "qc-section qc-keyfacts");
+    facts.id = "qc-mobile-keyfacts";
     facts.appendChild(el("h2", "", copy.keyFacts));
     var factGrid = el("div", "qc-fact-grid");
     factGrid.appendChild(fact("$21M", copy.initial));
@@ -177,6 +235,7 @@
     shell.appendChild(discover);
 
     var what = el("section", "qc-section qc-dark-section");
+    what.id = "qc-mobile-what";
     what.appendChild(el("h2", "", copy.what));
     var whatCards = el("div", "qc-card-stack");
     copy.whatCards.forEach(function (item) { whatCards.appendChild(card(item[0], item[1])); });
@@ -184,6 +243,7 @@
     shell.appendChild(what);
 
     var mainline = el("section", "qc-section qc-mainline");
+    mainline.id = "qc-mobile-mainline";
     mainline.appendChild(el("h2", "", copy.mainline));
     if (mainlineImage) {
       var img = el("img", "qc-section-image");
@@ -214,6 +274,7 @@
     shell.appendChild(wealth);
 
     var reports = el("section", "qc-section qc-dark-section");
+    reports.id = "qc-mobile-reports";
     reports.appendChild(el("h2", "", copy.reports));
     var reportList = el("div", "qc-report-list");
     copy.reportCards.forEach(function (item) { reportList.appendChild(report(item[0], item[1], copy.reportAction)); });
@@ -259,6 +320,16 @@
       if (child.classList.contains("qc-mobile-shell")) return;
       if (child.querySelector && child.querySelector(".block-header")) return;
       child.classList.add("qc-original-mobile-content");
+      child.setAttribute("aria-hidden", "true");
+      child.inert = true;
+    });
+  }
+
+  function restoreOriginalContent() {
+    Array.prototype.slice.call(document.querySelectorAll(".qc-original-mobile-content")).forEach(function (child) {
+      child.classList.remove("qc-original-mobile-content");
+      child.removeAttribute("aria-hidden");
+      child.inert = false;
     });
   }
 
@@ -277,34 +348,27 @@
 
   function mount() {
     var main = document.querySelector("main");
-    if (!main || !document.querySelector("#main") || !document.querySelector(".block-header-layout-mobile")) {
+    if (!main || !document.querySelector("#main")) {
       return false;
     }
 
-    var staleShell = document.querySelector(".qc-mobile-shell");
+    var staleShell = document.querySelector("[data-qc-mobile-shell]");
     if (staleShell && staleShell.querySelector("section.block")) {
       staleShell.remove();
       staleShell = null;
     }
 
     if (!mq.matches) {
+      document.documentElement.classList.remove("qc-mobile-boot");
       document.body.classList.remove("qc-mobile-enhanced");
+      if (staleShell) staleShell.remove();
+      restoreOriginalContent();
       return true;
     }
 
-    ensureBrand();
-
-    if (!document.querySelector(".qc-mobile-shell")) {
-      var headerBlock = Array.prototype.slice.call(main.children).find(function (child) {
-        return child.querySelector && child.querySelector(".block-header");
-      });
-      if (headerBlock && headerBlock.nextSibling) {
-        main.insertBefore(buildContent(), headerBlock.nextSibling);
-      } else if (headerBlock) {
-        main.appendChild(buildContent());
-      } else {
-        main.insertBefore(buildContent(), main.firstChild);
-      }
+    document.documentElement.classList.add("qc-mobile-boot");
+    if (!document.querySelector("[data-qc-mobile-shell]")) {
+      document.body.insertBefore(buildContent(), document.body.firstChild);
     }
 
     markOriginalContent();
@@ -323,12 +387,14 @@
     }
   }
 
-  if (document.readyState === "complete") {
-    window.setTimeout(function () { scheduleMount(); }, 300);
-  } else {
+  scheduleMount();
+  if (document.readyState !== "complete") {
+    document.addEventListener("DOMContentLoaded", function () { scheduleMount(); }, { once: true });
     window.addEventListener("load", function () {
-      window.setTimeout(function () { scheduleMount(); }, 300);
+      scheduleMount();
     }, { once: true });
+  } else {
+    scheduleMount();
   }
   mq.addEventListener ? mq.addEventListener("change", function () { scheduleMount(); }) : mq.addListener(function () { scheduleMount(); });
 })();
