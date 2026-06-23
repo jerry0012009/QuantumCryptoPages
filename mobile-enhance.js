@@ -9,10 +9,7 @@
     return (document.documentElement.lang || "").toLowerCase().indexOf("zh") === 0;
   }
 
-  function getImage(section, fallbackIndex) {
-    var selector = section ? "#" + section + " img" : "img";
-    var images = Array.prototype.slice.call(document.querySelectorAll(selector));
-    var img = images[fallbackIndex || 0] || images[0] || document.querySelector("#main img");
+  function imageUrl(img) {
     if (!img) return "";
     var srcset = img.getAttribute("srcset") || "";
     var matches = srcset.match(/(?:https?:\/\/|\.{0,2}\/)[^\s]+?\s+\d+w/g) || [];
@@ -28,6 +25,28 @@
       return b.width - a.width;
     })[0];
     return best ? new URL(best.url, document.baseURI).href : (img.src || img.currentSrc || "");
+  }
+
+  function imageKey(url) {
+    return (url || "").split("/").pop().replace(/\?.*$/, "");
+  }
+
+  function getImages(section) {
+    var selector = section ? "#" + section + " img" : "img";
+    var seen = {};
+    return Array.prototype.slice.call(document.querySelectorAll(selector)).map(function (img) {
+      return imageUrl(img);
+    }).filter(function (url) {
+      var key = imageKey(url);
+      if (!key || seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
+  function getImage(section, fallbackIndex) {
+    var images = getImages(section);
+    return images[fallbackIndex || 0] || images[0] || imageUrl(document.querySelector("#main img"));
   }
 
   function el(tag, className, text) {
@@ -47,8 +66,9 @@
     return a;
   }
 
-  function card(title, body) {
+  function card(title, body, meta) {
     var item = el("article", "qc-card");
+    if (meta) item.appendChild(el("span", "qc-card-meta", meta));
     item.appendChild(el("h3", "", title));
     item.appendChild(el("p", "", body));
     return item;
@@ -61,12 +81,24 @@
     return item;
   }
 
-  function report(title, body, action, href) {
+  function report(title, body, action, href, meta) {
     var item = el("article", "qc-report-card");
+    if (meta) item.appendChild(el("span", "qc-card-meta", meta));
     item.appendChild(el("h3", "", title));
     item.appendChild(el("p", "", body));
     item.appendChild(link("qc-text-link", action, href || "#qc-mobile-contact"));
     return item;
+  }
+
+  function mediaReport(item, action) {
+    var article = report(item[0], item[1], item[3] || action, item[4], item[5]);
+    if (item[2]) {
+      var img = el("img", "qc-report-image");
+      img.src = item[2];
+      img.alt = "";
+      article.insertBefore(img, article.firstChild);
+    }
+    return article;
   }
 
   function bullets(items) {
@@ -121,10 +153,15 @@
     var heroImage = getImage("main", 0);
     var mainlineImage = getImage("mainline", 0);
     var wealthImage = getImage("privatewealth", 0);
+    var reportImages = [0, 1, 2, 3, 4, 5, 6].map(function (index) {
+      return getImage("reports", index);
+    });
 
     var copy = zh ? {
       heroSubtitle: "连接传统资本与数字金融的加密宏观投资及私人财富平台。",
       heroButton: "联系我们",
+      heroSecondaryButton: "投资者登录",
+      heroKicker: "Digital Asset Investment",
       keyFacts: "关键数据",
       initial: "基金初始规模",
       since: "区块链与数字资产经验",
@@ -134,15 +171,15 @@
       discoverBody: "Quantum Crypto 聚焦数字资产、宏观周期与颠覆性新兴技术，为超高净值客户提供数字资产配置与策略管理服务，并致力于成为连接传统资本与加密金融的重要桥梁。",
       what: "业务方向",
       whatCards: [
-        ["多策略投资", "运营多策略数字资产对冲基金，重点关注全球宏观趋势与事件驱动机会。"],
-        ["组合多元化", "通过布局颠覆性新兴技术，帮助投资者优化长期资产配置结构。"],
-        ["风险控制", "提供金融风险管理与 OTC 解决方案，提升数字资产配置的安全边界。"]
+        ["多策略投资", "运营多策略数字资产对冲基金，重点关注全球宏观趋势与事件驱动机会。", "01"],
+        ["组合多元化", "通过布局颠覆性新兴技术，帮助投资者优化长期资产配置结构。", "02"],
+        ["风险控制", "提供金融风险管理与 OTC 解决方案，提升数字资产配置的安全边界。", "03"]
       ],
       mainline: "主线",
       mainCards: [
-        ["全球私人财富解决方案", "为高净值客户提供全球资产配置、合规框架与长期财富管理支持。"],
-        ["自营交易部门", "在伦敦与北京设有办公室及交易中心，围绕宏观周期与事件驱动机会开展专有交易。"],
-        ["生态系统合作建设", "与战略合作伙伴、专业团队及行业资源协同，拓展研究、技术、资本与市场价值。"]
+        ["全球私人财富解决方案", "为高净值客户提供全球资产配置、合规框架与长期财富管理支持。", "Wealth"],
+        ["自营交易部门", "在伦敦与北京设有办公室及交易中心，围绕宏观周期与事件驱动机会开展专有交易。", "Trading"],
+        ["生态系统合作建设", "与战略合作伙伴、专业团队及行业资源协同，拓展研究、技术、资本与市场价值。", "Ecosystem"]
       ],
       quote: "“我们聚焦颠覆性技术，并致力于成为连接传统资本与加密金融的重要桥梁。”",
       quoteBy: "Ray Wong，Quantum Crypto 创始合伙人",
@@ -152,20 +189,19 @@
       reports: "宏观研究与活动",
       reportAction: "申请获取研究报告",
       reportCards: [
-        ["主流全球资产概览与核心价值", "比较主要资产类别的价值基础、风险特征及其在投资组合中的配置作用。", "#qc-mobile-contact"],
-        ["2025 年香港金融政策分析与全球资产配置", "评估香港金融政策对跨境资本流动、数字金融发展及全球资产配置策略的影响。", "#qc-mobile-contact"],
-        ["货币投机：代币经济周期、宏观对冲与价值投资", "分析数字资产如何受到流动性环境、政策变化与长期资本配置框架的共同影响。", "https://followin.io/zh-Hant/feed/14568355"]
-      ],
-      eventTitle: "行业活动",
-      eventCards: [
-        ["Wiki Finance Expo Hong Kong 2024", "Quantum Crypto 成为 2024 Wiki Finance Expo Hong Kong 的赞助商及资产管理合作伙伴，参与亚洲金融科技、外汇与加密金融领域的重要行业交流。", "查看活动动态", "https://x.com/Wikiexpo_global/status/1789946359446913349"],
-        ["北京大学 Blockchain and Web3 圆桌", "Quantum Crypto 合伙人受邀出席北京大学 2024 Blockchain and Web3 Innovation Roundtable，分享数字资产周期、宏观对冲与机构化配置观点。", "查看报道", "https://foresightnews.pro/article/detail/71988"]
+        ["Quantum Crypto 成为 2024 香港金融世博会赞助商及资产管理机构合作伙伴", "Quantum Crypto 宣布成为 2024 Wiki Finance Expo Hong Kong 的赞助商及资产管理合作伙伴。作为亚洲规模领先的金融科技、外汇与加密金融盛会，Wiki Finance Expo Hong Kong 为全球金融机构、科技企业与数字资产参与者提供了重要交流平台。", reportImages[0], "查看活动动态", "https://x.com/Wikiexpo_global/status/1789946359446913349", "Event"],
+        ["主流全球资产概览与核心价值", "Quantum Crypto 围绕主流全球资产开展研究概览，比较主要资产类别的价值基础、风险特征及其在投资组合中的配置作用，并分析其在宏观环境变化下的长期意义。", reportImages[1], "申请获取研究报告", "#qc-mobile-contact", "Research"],
+        ["2025 年香港金融政策分析与全球资产配置", "Quantum Crypto 发布关于 2025 年香港金融政策环境的研究概览，评估相关政策对跨境资本流动、数字金融发展及全球资产配置策略的影响。", reportImages[2], "申请获取研究报告", "#qc-mobile-contact", "Policy"],
+        ["货币投机：代币经济周期、宏观对冲与价值投资", "Quantum Crypto 举办关于代币经济周期、宏观对冲与价值投资的研究简报，分析数字资产如何受到流动性环境、政策变化与长期资本配置框架的共同影响。", reportImages[3], "查看研究简报", "https://followin.io/zh-Hant/feed/14568355", "Briefing"],
+        ["AI 概念：2024 年叙事周期与投资逻辑", "Quantum Crypto 在北京举办关于 AI 驱动市场叙事的研究简报，探讨基础设施周期、资本预期与技术采用如何共同塑造 2024 年的投资逻辑。", reportImages[4], "申请获取研究报告", "#qc-mobile-contact", "AI"],
+        ["加密金融：开拓金融科技的未来", "Quantum Crypto 举办关于加密金融机构化发展的研究简报，重点分析比特币储备策略、稳定币监管，以及主要司法辖区的 VASP 牌照框架。", reportImages[5], "申请获取研究报告", "#qc-mobile-contact", "Crypto Finance"],
+        ["数字资产与货币周期的机构视角", "Quantum Crypto 合伙人受邀出席北京大学 2024 Blockchain and Web3 Innovation Roundtable，并发表主题分享，从机构视角探讨比特币周期、宏观对冲、货币演进，以及数字资产市场中的价值投资逻辑。", reportImages[6], "查看报道", "https://foresightnews.pro/article/detail/71988", "Roundtable"]
       ],
       news: "新闻",
       newsAction: "了解更多",
       newsCards: [
-        ["Quantum Crypto 推出 2,100 万美元数字资产基金", "面向家族办公室与高净值客户，聚焦全球货币市场中的宏观对冲策略机会。", "https://foresightnews.pro/article/detail/59778"],
-        ["Quantum Crypto 推出 QuanTech II", "拓展数字资产市场专有套利交易能力，以量化研究、纪律化执行与风险控制框架捕捉市场偏差。", "/quantumcrypto/login/"]
+        ["Quantum Crypto 推出 2,100 万美元数字资产基金", "面向家族办公室与高净值客户，聚焦全球货币市场中的宏观对冲策略机会。", "https://foresightnews.pro/article/detail/59778", "Fund"],
+        ["Quantum Crypto 推出 QuanTech II", "拓展数字资产市场专有套利交易能力，以量化研究、纪律化执行与风险控制框架捕捉市场偏差。", "/quantumcrypto/login/", "Strategy"]
       ],
       contact: "联系方式",
       social: "社交链接",
@@ -175,6 +211,8 @@
     } : {
       heroSubtitle: "A crypto macro investment and private wealth platform connecting traditional capital with digital finance.",
       heroButton: "Contact Us",
+      heroSecondaryButton: "Investor Portal",
+      heroKicker: "Digital Asset Investment",
       keyFacts: "Key Facts",
       initial: "Initial Fund Size",
       since: "Blockchain & Digital Asset Experience",
@@ -184,15 +222,15 @@
       discoverBody: "Quantum Crypto is a crypto macro hedge fund targeting disruptive emerging technologies, providing crypto financial management services to ultra-high-net-worth clients and serving as a bridge between traditional capital and crypto finance.",
       what: "What We Do",
       whatCards: [
-        ["Multi-Strategy Investment", "We operate a multi-strategy crypto hedge fund focused on global macro and corporate events."],
-        ["Portfolio Diversification", "We help investors diversify portfolios through exposure to disruptive emerging technologies."],
-        ["Risk Control", "We provide financial risk management and OTC solutions designed to protect crypto assets."]
+        ["Multi-Strategy Investment", "We operate a multi-strategy crypto hedge fund focused on global macro and corporate events.", "01"],
+        ["Portfolio Diversification", "We help investors diversify portfolios through exposure to disruptive emerging technologies.", "02"],
+        ["Risk Control", "We provide financial risk management and OTC solutions designed to protect crypto assets.", "03"]
       ],
       mainline: "Mainline",
       mainCards: [
-        ["Private Global Wealth Solutions", "We support compliant global asset allocation, efficient wealth management, and family legacy planning."],
-        ["Proprietary Trading", "With offices and trading rooms in London and Beijing, we trade digital assets around macro and event-driven opportunities."],
-        ["Ecosystem Partnerships", "We collaborate with strategic partners and specialist teams to expand research, technology, capital, and market value."]
+        ["Private Global Wealth Solutions", "We support compliant global asset allocation, efficient wealth management, and family legacy planning.", "Wealth"],
+        ["Proprietary Trading", "With offices and trading rooms in London and Beijing, we trade digital assets around macro and event-driven opportunities.", "Trading"],
+        ["Ecosystem Partnerships", "We collaborate with strategic partners and specialist teams to expand research, technology, capital, and market value.", "Ecosystem"]
       ],
       quote: "“We focus on disruptive technologies and serve as a bridge for traditional capital into crypto finance.”",
       quoteBy: "Ray Wong, Founding Partner of Quantum Crypto",
@@ -202,20 +240,19 @@
       reports: "Macro Reports & Events",
       reportAction: "Request Research",
       reportCards: [
-        ["Overview of Mainstream Global Assets and Core Value", "A research overview comparing value foundations, risk characteristics, and portfolio roles across major asset classes.", "#qc-mobile-contact"],
-        ["2025 Hong Kong Financial Policy Analysis and Global Asset Allocation", "An assessment of policy implications for cross-border capital flows, digital finance, and global allocation strategy.", "#qc-mobile-contact"],
-        ["Currency Speculation: Tokenomic Cycle, Macro Hedging, and Value Investing", "A briefing on liquidity, policy shifts, and long-term capital allocation frameworks across digital assets.", "https://followin.io/zh-Hant/feed/14568355"]
-      ],
-      eventTitle: "Featured Events",
-      eventCards: [
-        ["Wiki Finance Expo Hong Kong 2024", "Quantum Crypto joined Wiki Finance Expo Hong Kong 2024 as a sponsor and Asset Management partner, adding industry-facing visibility across fintech, forex, and crypto finance.", "View Event", "https://x.com/Wikiexpo_global/status/1789946359446913349"],
-        ["Peking University Blockchain and Web3 Roundtable", "A Quantum Crypto partner was invited to share institutional perspectives on Bitcoin cycles, macro hedging, monetary evolution, and digital asset value investing.", "View Coverage", "https://foresightnews.pro/article/detail/71988"]
+        ["Quantum Crypto Named Sponsor and Asset Management Partner of Wiki Finance EXPO Hong Kong", "Quantum Crypto announced partnership with Wiki Finance Expo Hong Kong 2024, Asia's largest fintech, forex, and crypto event, as a sponsor and Asset Management partner.", reportImages[0], "View Event", "https://x.com/Wikiexpo_global/status/1789946359446913349", "Event"],
+        ["Overview of Mainstream Global Assets and Core Value", "Quantum Crypto conducted a research overview of mainstream global assets, comparing value foundations, risk characteristics, and portfolio roles across major asset classes under changing macro conditions.", reportImages[1], "Request Research", "#qc-mobile-contact", "Research"],
+        ["2025 Hong Kong Financial Policy Analysis and Global Asset Allocation", "Quantum Crypto released a research overview on Hong Kong's 2025 financial policy landscape, assessing implications for cross-border capital flows, digital finance development, and global asset allocation strategy.", reportImages[2], "Request Research", "#qc-mobile-contact", "Policy"],
+        ["Currency Speculation: Tokenomic Cycle, Macro Hedging, and Value Investing", "Quantum Crypto delivered a research briefing on tokenomic cycles, macro hedging, and value investing, analyzing how digital assets respond to liquidity conditions, policy shifts, and long-term allocation frameworks.", reportImages[3], "View Briefing", "https://followin.io/zh-Hant/feed/14568355", "Briefing"],
+        ["AI Concept: 2024 Narratives and Investment Logic", "Quantum Crypto delivered a research briefing in Beijing on AI-driven market narratives, examining how infrastructure cycles, capital expectations, and technological adoption shaped investment logic in 2024.", reportImages[4], "Request Research", "#qc-mobile-contact", "AI"],
+        ["Crypto Finance: Pioneering the Future of FinTech", "Quantum Crypto delivered a research briefing on the institutional development of crypto finance, examining Bitcoin reserve strategies, stablecoin regulation, and VASP licensing frameworks across major jurisdictions.", reportImages[5], "Request Research", "#qc-mobile-contact", "Crypto Finance"],
+        ["Institutional Perspectives on Digital Assets and Monetary Cycles", "A Quantum Crypto partner was invited to speak at Peking University's 2024 Blockchain and Web3 Innovation Roundtable, sharing institutional perspectives on Bitcoin cycles, macro hedging, monetary evolution, and digital asset value investing.", reportImages[6], "View Coverage", "https://foresightnews.pro/article/detail/71988", "Roundtable"]
       ],
       news: "News",
       newsAction: "Learn More",
       newsCards: [
-        ["Quantum Crypto Launches $21 Million Crypto Fund", "The London-based digital asset investment firm launched Quantum Crypto Fund I for family offices and high-net-worth clients.", "https://foresightnews.pro/article/detail/59778"],
-        ["Quantum Crypto Launches QuanTech II", "QuanTech II advances proprietary arbitrage trading with quantitative research, disciplined execution, and risk controls.", "/quantumcrypto/login/"]
+        ["Quantum Crypto Launches $21 Million Crypto Fund", "The London-based digital asset investment firm launched Quantum Crypto Fund I for family offices and high-net-worth clients.", "https://foresightnews.pro/article/detail/59778", "Fund"],
+        ["Quantum Crypto Launches QuanTech II", "QuanTech II advances proprietary arbitrage trading with quantitative research, disciplined execution, and risk controls.", "/quantumcrypto/login/", "Strategy"]
       ],
       contact: "Contact Us",
       social: "Social Links",
@@ -231,10 +268,13 @@
 
     var hero = el("section", "qc-mobile-hero");
     if (heroImage) hero.style.setProperty("--qc-hero-image", "url('" + heroImage.replace(/'/g, "\\'") + "')");
-    hero.appendChild(el("div", "qc-hero-kicker", "Quantum Crypto"));
+    hero.appendChild(el("div", "qc-hero-kicker", copy.heroKicker));
     hero.appendChild(el("h1", "", "Quantum Crypto"));
     hero.appendChild(el("p", "", copy.heroSubtitle));
-    hero.appendChild(link("qc-button", copy.heroButton, "#qc-mobile-contact"));
+    var heroActions = el("div", "qc-hero-actions");
+    heroActions.appendChild(link("qc-button", copy.heroButton, "#qc-mobile-contact"));
+    heroActions.appendChild(link("qc-button qc-button-secondary", copy.heroSecondaryButton, "/quantumcrypto/login/"));
+    hero.appendChild(heroActions);
     shell.appendChild(hero);
 
     var facts = el("section", "qc-section qc-keyfacts");
@@ -257,7 +297,7 @@
     what.id = "qc-mobile-what";
     what.appendChild(el("h2", "", copy.what));
     var whatCards = el("div", "qc-card-stack");
-    copy.whatCards.forEach(function (item) { whatCards.appendChild(card(item[0], item[1])); });
+    copy.whatCards.forEach(function (item) { whatCards.appendChild(card(item[0], item[1], item[2])); });
     what.appendChild(whatCards);
     shell.appendChild(what);
 
@@ -271,7 +311,7 @@
       mainline.appendChild(img);
     }
     var mainCards = el("div", "qc-card-stack");
-    copy.mainCards.forEach(function (item) { mainCards.appendChild(card(item[0], item[1])); });
+    copy.mainCards.forEach(function (item) { mainCards.appendChild(card(item[0], item[1], item[2])); });
     mainline.appendChild(mainCards);
     shell.appendChild(mainline);
 
@@ -296,21 +336,14 @@
     reports.id = "qc-mobile-reports";
     reports.appendChild(el("h2", "", copy.reports));
     var reportList = el("div", "qc-report-list");
-    copy.reportCards.forEach(function (item) { reportList.appendChild(report(item[0], item[1], copy.reportAction, item[2])); });
+    copy.reportCards.forEach(function (item) { reportList.appendChild(mediaReport(item, copy.reportAction)); });
     reports.appendChild(reportList);
     shell.appendChild(reports);
-
-    var events = el("section", "qc-section qc-events");
-    events.appendChild(el("h2", "", copy.eventTitle));
-    var eventList = el("div", "qc-report-list");
-    copy.eventCards.forEach(function (item) { eventList.appendChild(report(item[0], item[1], item[2], item[3])); });
-    events.appendChild(eventList);
-    shell.appendChild(events);
 
     var news = el("section", "qc-section qc-news");
     news.appendChild(el("h2", "", copy.news));
     var newsList = el("div", "qc-report-list");
-    copy.newsCards.forEach(function (item) { newsList.appendChild(report(item[0], item[1], copy.newsAction, item[2])); });
+    copy.newsCards.forEach(function (item) { newsList.appendChild(report(item[0], item[1], copy.newsAction, item[2], item[3])); });
     news.appendChild(newsList);
     shell.appendChild(news);
 

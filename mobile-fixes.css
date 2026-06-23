@@ -153,6 +153,14 @@
     line-height: 1.5;
   }
 
+  .qc-hero-actions {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    max-width: 280px;
+    margin-top: 28px;
+  }
+
   .qc-button {
     display: inline-flex;
     align-items: center;
@@ -160,7 +168,6 @@
     min-height: 48px;
     width: 100%;
     max-width: 280px;
-    margin-top: 28px;
     padding: 0 22px;
     border: 1px solid #fff;
     color: #000;
@@ -172,7 +179,7 @@
 
   .qc-button-secondary {
     color: #fff;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.24);
   }
 
   .qc-section {
@@ -197,7 +204,6 @@
   .qc-discover,
   .qc-mainline,
   .qc-private,
-  .qc-events,
   .qc-news {
     color: #111;
     background: #fff;
@@ -233,9 +239,20 @@
   }
 
   .qc-fact {
+    position: relative;
     padding: 24px 22px;
     border: 1px solid rgba(17, 17, 17, 0.14);
-    background: #f7f7f5;
+    background: linear-gradient(180deg, #fbfbfa 0%, #f4f4f2 100%);
+  }
+
+  .qc-fact::after {
+    position: absolute;
+    top: 22px;
+    right: 22px;
+    width: 28px;
+    height: 1px;
+    background: rgba(17, 17, 17, 0.28);
+    content: "";
   }
 
   .qc-fact strong {
@@ -276,17 +293,31 @@
 
   .qc-card,
   .qc-report-card {
+    position: relative;
     padding: 24px 22px;
     border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.045);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
   }
 
   .qc-mainline .qc-card,
   .qc-private .qc-card,
-  .qc-events .qc-report-card,
   .qc-news .qc-report-card {
     border-color: rgba(17, 17, 17, 0.12);
     background: #f7f7f5;
+  }
+
+  .qc-card-meta {
+    display: inline-flex;
+    margin-bottom: 14px;
+    color: rgba(255, 255, 255, 0.52);
+    font-size: 11px;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .qc-news .qc-card-meta,
+  .qc-mainline .qc-card-meta {
+    color: rgba(17, 17, 17, 0.48);
   }
 
   .qc-card h3,
@@ -301,14 +332,13 @@
   .qc-card p,
   .qc-report-card p {
     margin-top: 12px;
-    color: rgba(255, 255, 255, 0.72);
+    color: rgba(255, 255, 255, 0.78);
     font-size: 15px;
-    line-height: 1.56;
+    line-height: 1.62;
   }
 
   .qc-mainline .qc-card p,
   .qc-private .qc-card p,
-  .qc-events .qc-report-card p,
   .qc-news .qc-report-card p {
     color: rgba(17, 17, 17, 0.68);
   }
@@ -320,6 +350,21 @@
     aspect-ratio: 16 / 10;
     margin: 28px 0 32px;
     object-fit: cover;
+  }
+
+  .qc-report-image {
+    display: block;
+    width: calc(100% + 44px);
+    max-width: none;
+    aspect-ratio: 16 / 9;
+    margin: -24px -22px 20px;
+    object-fit: cover;
+    background: #111;
+  }
+
+  #qc-mobile-reports .qc-report-card:first-child .qc-report-image,
+  #qc-mobile-reports .qc-report-card:nth-child(7) .qc-report-image {
+    aspect-ratio: 4 / 3;
   }
 
   .qc-mobile-quote {
@@ -415,6 +460,10 @@
   .qc-socials .qc-text-link {
     margin-top: 8px;
     color: rgba(255, 255, 255, 0.86);
+  }
+
+  .qc-mobile-contact .qc-button {
+    margin-top: 26px;
   }
 
   .block-header {
