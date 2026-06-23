@@ -40,6 +40,10 @@
   function link(className, text, href) {
     var a = el("a", className, text);
     a.href = href || "#qc-mobile-contact";
+    if (/^https?:\/\//.test(a.href) && a.origin !== window.location.origin) {
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+    }
     return a;
   }
 
@@ -57,11 +61,11 @@
     return item;
   }
 
-  function report(title, body, action) {
+  function report(title, body, action, href) {
     var item = el("article", "qc-report-card");
     item.appendChild(el("h3", "", title));
     item.appendChild(el("p", "", body));
-    item.appendChild(link("qc-text-link", action, "#qc-mobile-contact"));
+    item.appendChild(link("qc-text-link", action, href || "#qc-mobile-contact"));
     return item;
   }
 
@@ -93,7 +97,8 @@
       ["Mainline", "#qc-mobile-mainline"],
       [copy.reports, "#qc-mobile-reports"],
       [copy.contact, "#qc-mobile-contact"],
-      [copy.portal, "#qc-mobile-contact"]
+      [copy.language, copy.languageHref],
+      [copy.portal, "/quantumcrypto/login/"]
     ].forEach(function (item) {
       nav.appendChild(link("", item[0], item[1]));
     });
@@ -147,19 +152,26 @@
       reports: "宏观研究与活动",
       reportAction: "申请获取研究报告",
       reportCards: [
-        ["主流全球资产概览与核心价值", "比较主要资产类别的价值基础、风险特征及其在投资组合中的配置作用。"],
-        ["2025 年香港金融政策分析与全球资产配置", "评估香港金融政策对跨境资本流动、数字金融发展及全球资产配置策略的影响。"],
-        ["货币投机：代币经济周期、宏观对冲与价值投资", "分析数字资产如何受到流动性环境、政策变化与长期资本配置框架的共同影响。"]
+        ["主流全球资产概览与核心价值", "比较主要资产类别的价值基础、风险特征及其在投资组合中的配置作用。", "#qc-mobile-contact"],
+        ["2025 年香港金融政策分析与全球资产配置", "评估香港金融政策对跨境资本流动、数字金融发展及全球资产配置策略的影响。", "#qc-mobile-contact"],
+        ["货币投机：代币经济周期、宏观对冲与价值投资", "分析数字资产如何受到流动性环境、政策变化与长期资本配置框架的共同影响。", "https://followin.io/zh-Hant/feed/14568355"]
+      ],
+      eventTitle: "行业活动",
+      eventCards: [
+        ["Wiki Finance Expo Hong Kong 2024", "Quantum Crypto 成为 2024 Wiki Finance Expo Hong Kong 的赞助商及资产管理合作伙伴，参与亚洲金融科技、外汇与加密金融领域的重要行业交流。", "查看活动动态", "https://x.com/Wikiexpo_global/status/1789946359446913349"],
+        ["北京大学 Blockchain and Web3 圆桌", "Quantum Crypto 合伙人受邀出席北京大学 2024 Blockchain and Web3 Innovation Roundtable，分享数字资产周期、宏观对冲与机构化配置观点。", "查看报道", "https://foresightnews.pro/article/detail/71988"]
       ],
       news: "新闻",
       newsAction: "了解更多",
       newsCards: [
-        ["Quantum Crypto 推出 2,100 万美元数字资产基金", "面向家族办公室与高净值客户，聚焦全球货币市场中的宏观对冲策略机会。"],
-        ["Quantum Crypto 推出 QuanTech II", "拓展数字资产市场专有套利交易能力，以量化研究、纪律化执行与风险控制框架捕捉市场偏差。"]
+        ["Quantum Crypto 推出 2,100 万美元数字资产基金", "面向家族办公室与高净值客户，聚焦全球货币市场中的宏观对冲策略机会。", "https://foresightnews.pro/article/detail/59778"],
+        ["Quantum Crypto 推出 QuanTech II", "拓展数字资产市场专有套利交易能力，以量化研究、纪律化执行与风险控制框架捕捉市场偏差。", "/quantumcrypto/login/"]
       ],
       contact: "联系方式",
       social: "社交链接",
-      portal: "投资者登录"
+      portal: "投资者登录",
+      language: "English",
+      languageHref: "/quantumcrypto/"
     } : {
       heroSubtitle: "A crypto macro investment and private wealth platform connecting traditional capital with digital finance.",
       heroButton: "Contact Us",
@@ -190,19 +202,26 @@
       reports: "Macro Reports & Events",
       reportAction: "Request Research",
       reportCards: [
-        ["Overview of Mainstream Global Assets and Core Value", "A research overview comparing value foundations, risk characteristics, and portfolio roles across major asset classes."],
-        ["2025 Hong Kong Financial Policy Analysis and Global Asset Allocation", "An assessment of policy implications for cross-border capital flows, digital finance, and global allocation strategy."],
-        ["Currency Speculation: Tokenomic Cycle, Macro Hedging, and Value Investing", "A briefing on liquidity, policy shifts, and long-term capital allocation frameworks across digital assets."]
+        ["Overview of Mainstream Global Assets and Core Value", "A research overview comparing value foundations, risk characteristics, and portfolio roles across major asset classes.", "#qc-mobile-contact"],
+        ["2025 Hong Kong Financial Policy Analysis and Global Asset Allocation", "An assessment of policy implications for cross-border capital flows, digital finance, and global allocation strategy.", "#qc-mobile-contact"],
+        ["Currency Speculation: Tokenomic Cycle, Macro Hedging, and Value Investing", "A briefing on liquidity, policy shifts, and long-term capital allocation frameworks across digital assets.", "https://followin.io/zh-Hant/feed/14568355"]
+      ],
+      eventTitle: "Featured Events",
+      eventCards: [
+        ["Wiki Finance Expo Hong Kong 2024", "Quantum Crypto joined Wiki Finance Expo Hong Kong 2024 as a sponsor and Asset Management partner, adding industry-facing visibility across fintech, forex, and crypto finance.", "View Event", "https://x.com/Wikiexpo_global/status/1789946359446913349"],
+        ["Peking University Blockchain and Web3 Roundtable", "A Quantum Crypto partner was invited to share institutional perspectives on Bitcoin cycles, macro hedging, monetary evolution, and digital asset value investing.", "View Coverage", "https://foresightnews.pro/article/detail/71988"]
       ],
       news: "News",
       newsAction: "Learn More",
       newsCards: [
-        ["Quantum Crypto Launches $21 Million Crypto Fund", "The London-based digital asset investment firm launched Quantum Crypto Fund I for family offices and high-net-worth clients."],
-        ["Quantum Crypto Launches QuanTech II", "QuanTech II advances proprietary arbitrage trading with quantitative research, disciplined execution, and risk controls."]
+        ["Quantum Crypto Launches $21 Million Crypto Fund", "The London-based digital asset investment firm launched Quantum Crypto Fund I for family offices and high-net-worth clients.", "https://foresightnews.pro/article/detail/59778"],
+        ["Quantum Crypto Launches QuanTech II", "QuanTech II advances proprietary arbitrage trading with quantitative research, disciplined execution, and risk controls.", "/quantumcrypto/login/"]
       ],
       contact: "Contact Us",
       social: "Social Links",
-      portal: "Investor Portal Login"
+      portal: "Investor Portal Login",
+      language: "汉语",
+      languageHref: "/quantumcrypto/zh/"
     };
 
     var shell = el("div", "qc-mobile-shell");
@@ -277,14 +296,21 @@
     reports.id = "qc-mobile-reports";
     reports.appendChild(el("h2", "", copy.reports));
     var reportList = el("div", "qc-report-list");
-    copy.reportCards.forEach(function (item) { reportList.appendChild(report(item[0], item[1], copy.reportAction)); });
+    copy.reportCards.forEach(function (item) { reportList.appendChild(report(item[0], item[1], copy.reportAction, item[2])); });
     reports.appendChild(reportList);
     shell.appendChild(reports);
+
+    var events = el("section", "qc-section qc-events");
+    events.appendChild(el("h2", "", copy.eventTitle));
+    var eventList = el("div", "qc-report-list");
+    copy.eventCards.forEach(function (item) { eventList.appendChild(report(item[0], item[1], item[2], item[3])); });
+    events.appendChild(eventList);
+    shell.appendChild(events);
 
     var news = el("section", "qc-section qc-news");
     news.appendChild(el("h2", "", copy.news));
     var newsList = el("div", "qc-report-list");
-    copy.newsCards.forEach(function (item) { newsList.appendChild(report(item[0], item[1], copy.newsAction)); });
+    copy.newsCards.forEach(function (item) { newsList.appendChild(report(item[0], item[1], copy.newsAction, item[2])); });
     news.appendChild(newsList);
     shell.appendChild(news);
 
@@ -296,11 +322,10 @@
     contact.appendChild(el("p", "qc-contact-line", "Quantum Crypto, 14 Leinster Gardens, London, England, W2 6DR"));
     contact.appendChild(el("h3", "", copy.social));
     var socials = el("div", "qc-socials");
-    ["LinkedIn", "X.com", "Facebook"].forEach(function (name) {
-      socials.appendChild(link("qc-text-link", name, "#navigation"));
-    });
+    socials.appendChild(link("qc-text-link", "X.com", "https://x.com/Wikiexpo_global/status/1789946359446913349"));
+    socials.appendChild(link("qc-text-link", "Research", "https://followin.io/zh-Hant/feed/14568355"));
     contact.appendChild(socials);
-    contact.appendChild(link("qc-button qc-button-secondary", copy.portal, "#navigation"));
+    contact.appendChild(link("qc-button qc-button-secondary", copy.portal, "/quantumcrypto/login/"));
     shell.appendChild(contact);
 
     return shell;

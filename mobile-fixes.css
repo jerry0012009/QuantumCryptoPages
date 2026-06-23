@@ -197,6 +197,7 @@
   .qc-discover,
   .qc-mainline,
   .qc-private,
+  .qc-events,
   .qc-news {
     color: #111;
     background: #fff;
@@ -282,6 +283,7 @@
 
   .qc-mainline .qc-card,
   .qc-private .qc-card,
+  .qc-events .qc-report-card,
   .qc-news .qc-report-card {
     border-color: rgba(17, 17, 17, 0.12);
     background: #f7f7f5;
@@ -306,6 +308,7 @@
 
   .qc-mainline .qc-card p,
   .qc-private .qc-card p,
+  .qc-events .qc-report-card p,
   .qc-news .qc-report-card p {
     color: rgba(17, 17, 17, 0.68);
   }
