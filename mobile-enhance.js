@@ -1,5 +1,5 @@
 (function () {
-  var MOBILE_QUERY = "(max-width: 920px)";
+  var MOBILE_QUERY = "(max-width: 768px)";
   var mq = window.matchMedia(MOBILE_QUERY);
 
   function isZh() {
